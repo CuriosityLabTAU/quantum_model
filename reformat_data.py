@@ -3,6 +3,7 @@ import datetime
 import pandas as pd
 import numpy as np
 import seaborn as sns
+from hamiltonian_prediction import *
 
 import timeit
 
@@ -196,7 +197,7 @@ def calc_all_questions(df):
             ### is the third question is conj/ disj
             all_q, fal = q_qubits_fal(q)
 
-            sub_data[p_id] = get_question_H(psi_0, all_q, p_real,with_mixing = True, h_mix_type=0, fallacy_type=fal)
+            sub_data[p_id] = get_question_H(psi_0, all_q, p_real, fallacy_type=fal)
 
             psi_0 = sub_data[p_id]['psi']
 
@@ -226,7 +227,13 @@ def calc_all_questions(df):
         print('user %d/%d: ' %(ui, len(df['survey_code'].unique())), stop - start)
 
     ### save dict with np
-    np.save('data/new_code/all_data_dict.npy', all_data)
+    np.save('data/processed_data/all_data_dict.npy', all_data)
+
+    print(''' 
+    ================================================================================
+    || Done calculating {h_i} for all questions for all users.                    || 
+    || Data was saved to: data/processed_data/all_data_dict.npy                   || 
+    ================================================================================''')
 
     return all_data
 
@@ -322,6 +329,7 @@ def calculate_all_data_I():
     prediction_errors.set_index('id', inplace=True)
     prediction_errors.to_csv('data/new_code/prediction_errors.csv')  # index=False)
 
+
 def plot_errors(df):
     '''Boxplot of the errors per question type.
     Also calculate statistical difference between groups.'''
@@ -356,9 +364,10 @@ def plot_errors(df):
 
     print()
 
+
 def main():
-    reformat, calc_questions = True , False
-    # reformat, calc_questions = False, True
+    # reformat, calc_questions = True , False
+    reformat, calc_questions = False, True
     # reformat, calc_questions = False, False
 
     #calc_errs = True
@@ -367,11 +376,13 @@ def main():
     if reformat:
         raw_df = reformat_data_from_qualtrics('data/raw_data/Emma_and_Liz_april2019_no_slider.csv')
     else:
-        raw_df = pd.read_csv('data/new_code/clear_df.csv')
+        raw_df = pd.read_csv('data/processed_data/clear_df.csv')
 
     if calc_questions:
         calc_all_questions(raw_df) ### calculate all the data
 
+    ### calcualte and predict erros of I
+    ### todo: delete before submting the paper!
     # if calc_errs:
     #     calculate_all_data_I() ### calculate error predictions
     # else:
