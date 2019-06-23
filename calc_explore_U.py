@@ -66,7 +66,7 @@ def calculate_all_data_cross_val_kfold(use_U=True, with_mixing=True, use_neutral
     '''cross validation only for the third question'''
 
     ### load the dataframe containing all the data
-    raw_df = pd.read_csv('data/new_code/clear_df.csv')
+    raw_df = pd.read_csv('data/processed/clear_df.csv')
     raw_df.rename({'survey_code':'userID'},axis = 1, inplace=True)
     raw_df.reset_index(drop=True, inplace=True)
 
@@ -235,40 +235,12 @@ def calculate_all_data_cross_val_kfold(use_U=True, with_mixing=True, use_neutral
                 temp['p_a_pred_I'] = [get_general_p(h_a, all_q, '0', psi_0, n_qubits=4).flatten()[0]]
                 temp['p_b_pred_I'] = [get_general_p(h_b, all_q, '1', psi_0, n_qubits=4).flatten()[0]]
 
-                ### calculate the error from the previous probabilities with NO U.
-                temp['p_a_err_real_pre'] = [(temp['p_a_real'][0] - temp['p_a_pre'][0])**2]
-                temp['p_b_err_real_pre'] = [(temp['p_b_real'][0] - temp['p_b_pre'][0])**2]
+                ### predicted probabilities with mean from fold %
+                temp['p_a_mean80'] = [p_a_80]
+                temp['p_b_mean80'] = [p_b_80]
+                temp['p_ab_mean80'] = [p_b_80]
 
-                temp['p_a_err_real_pre_abs'] = [np.abs(temp['p_a_real'][0] - temp['p_a_pre'][0])]
-                temp['p_b_err_real_pre_abs'] = [np.abs(temp['p_b_real'][0] - temp['p_b_pre'][0])]
-
-                ### calculate the error from the propogated state with U
-                temp['p_a_err_real_U'] = [(temp['p_a_real'][0] - temp['p_a_pred_U'][0])**2]
-                temp['p_b_err_real_U'] = [(temp['p_b_real'][0] - temp['p_b_pred_U'][0])**2]
-
-                temp['p_a_err_real_U_abs'] = [np.abs(temp['p_a_real'][0] - temp['p_a_pred_U'][0])]
-                temp['p_b_err_real_U_abs'] = [np.abs(temp['p_b_real'][0] - temp['p_b_pred_U'][0])]
-
-                ### calculate the error from the full 4 qubits state with I
-                temp['p_a_err_real_I'] = [(temp['p_a_real'][0] - temp['p_a_pred_I'][0])**2]
-                temp['p_b_err_real_I'] = [(temp['p_b_real'][0] - temp['p_b_pred_I'][0])**2]
-
-                temp['p_a_err_real_I_abs'] = [np.abs(temp['p_a_real'][0] - temp['p_a_pred_I'][0])]
-                temp['p_b_err_real_I_abs'] = [np.abs(temp['p_b_real'][0] - temp['p_b_pred_I'][0])]
-
-                ### calculate the error from the mean of 80 precent
-                temp['p_a_err_real_mean80'] = [(temp['p_a_real'][0] - p_a_80)**2]
-                temp['p_b_err_real_mean80'] = [(temp['p_b_real'][0] - p_b_80)**2]
-
-                temp['p_a_err_real_mean80_abs'] = [np.abs(temp['p_a_real'][0] - p_a_80)]
-                temp['p_b_err_real_mean80_abs'] = [np.abs(temp['p_b_real'][0] - p_b_80)]
-
-                ### calculate the error from uniform
-                temp['p_a_err_real_uniform'] = [(temp['p_a_real'][0] - .5)**2]
-                temp['p_b_err_real_uniform'] = [(temp['p_b_real'][0] - .5)**2]
-
-                temp['p_a_err_real_uniform_abs'] = [np.abs(temp['p_a_real'][0] - .5)]
-                temp['p_b_err_real_uniform_abs'] = [np.abs(temp['p_b_real'][0] - .5)]
+                ### ====>>>> TODO: continue from here:
 
                 # use question H to generate h_ab
                 # q_info[qn]['H_ols']
