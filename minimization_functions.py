@@ -48,7 +48,7 @@ def general_minimize(f, args_, x_0, method = 'Powell', bounds = None):
     best_result = None
     num_of_minimizations = 1
     x_0r = []
-    for i in range(num_of_minimizations): #todo: change back to 100 --> change the range
+    for i in range(num_of_minimizations):
         x_0r.append(np.random.randint(2, size=x_0.shape) * 2.0 - 1.0)
         x_0r.append(np.random.random(size = x_0.shape) * 2.0 - 1.0)
         x_0_rand = x_0r[np.random.randint(2)]

@@ -103,7 +103,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
 
         ### split the users to test and train using kfold - each user will be one time in test
         k = 10
-        kf = KFold(n_splits=k)  # todo: num_of_repeats
+        kf = KFold(n_splits=k)
         kf.get_n_splits(user_list_train)
 
         print('''=================================================================''') # to differentiate between qn
@@ -197,7 +197,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
 
                 q_info[qn]['H_ols'][i] = est
 
-            ### todo: add this controls.
+            ### TODO: add this controls.
             ### linear and logistic regression on for predicting the third question probs (real data).
             ### from all the (probs) prediction --> irr: 0/1 (predicted data).
             ### logistic regression for predicting the third question irr (real data).
@@ -295,6 +295,37 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     || {h_i} were saved to: data/predictions/df_h.csv                             || 
     || Supplementary files were saved to: kfold_all_data_dict.npy, kfold_UbyQ.npy || 
     ================================================================================''')
+
+
+# TODO: Explore U: which {h} are siginificantlly different from zero and which qubits are asked in the question.
+# TODO: complete this 3 functions
+def statistical_diff_h(df_h):
+    '''
+    Calculate which {h} per qn are statistically significant from zero.
+    :param df_h: dataframe with the h per qn per kfold.
+    :return: df_u90, {h} per qn that are statistically significant from zero.
+    '''
+    pass
+
+
+def predict_u90(kfold_prediction, df_u90):
+    '''
+    Predict {p_i} per qn based only the {h} that are different from zero.
+    :param df_u90: {h} that are statistically significant from zero per qn.
+    :param kfold_prediction: dataframe of predictions based on I, U (not different from zero), mean80, pre and uniform.
+    :return: kfold_prediction: add the predictions of significant U to the dataframe.
+    '''
+
+
+def compare_predictions(kfold_prediction):
+    '''
+    Compare the different models.
+    :param kfold_prediction: dataframe containing all the predictions and real probabilities.
+    :return: model_compare.csv --> dataframe of comparison between the models.
+    '''
+
+
+
 
 def plot_errors(df):
     '''Boxplot of the errors per question type.

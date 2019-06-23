@@ -140,7 +140,7 @@ def reformat_data_from_qualtrics(path):
 
     raw_df = raw_df[list(q_dict.values()) + id_qs + list(raw_df.columns[raw_df.columns.str.contains('order')])]
 
-    raw_df[list(q_dict.values())] = raw_df[list(q_dict.values())].astype('float') / 100 ### todo: uncomment for real data
+    raw_df[list(q_dict.values())] = raw_df[list(q_dict.values())].astype('float') / 100
     # raw_df[list(q_dict.values())] = np.random.random(raw_df[list(q_dict.values())].shape)
 
     ### which question was third
@@ -382,7 +382,7 @@ def main():
         calc_all_questions(raw_df) ### calculate all the data
 
     ### calcualte and predict erros of I
-    ### todo: delete before submting the paper!
+    ### TODO: delete before submting the paper!
     # if calc_errs:
     #     calculate_all_data_I() ### calculate error predictions
     # else:

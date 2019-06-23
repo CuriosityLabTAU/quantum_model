@@ -330,7 +330,6 @@ def generate_predictions(use_U=True, with_mixing=True, use_neutral=False, h_mix_
             else:
                 h_ab = 0.0
 
-            ### todo: for each prob take it's h
             full_h = [data['h_q'][str(all_q[0])], data['h_q'][str(all_q[1])], h_ab]
             pred_p_a = get_general_p(full_h, all_q, '0', psi_0, n_qubits=4, h_mix_type = h_mix_type)
             pred_p_b = get_general_p(full_h, all_q, '1', psi_0, n_qubits=4, h_mix_type = h_mix_type)
