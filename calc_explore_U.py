@@ -108,6 +108,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
             ''' % (qn, i, k) )
             q_info[qn] = {}
             q_info[qn]['U_params_h'] = {}
+            q_info[qn]['H_ols'] = {}
             train_users, test_users = user_list_train[train_index], user_list_train[test_index]
             train_q_data_qn = {}
             test_q_data_qn = {}
@@ -155,33 +156,37 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 q_info[qn]['U_params_h'][i] = [res_temp.x]
                 df_h = df_h.append(pd.DataFrame(
                     columns=['qn', 'k_fold', 'h_a', 'h_b', 'h_c', 'h_d', 'h_ab', 'h_ac', 'h_ad', 'h_bc', 'h_bd','h_cd'],
-                    data = [qn, i] + list(res_temp.x)))
+                    data = [[qn, i] + list(res_temp.x)]))
 
                 ### calculate U from current {h_i}
                 q_info[qn]['U'] = U_from_H(grandH_from_x(res_temp.x, fal))
 
                 # calculate H_AB model based on MLR/ ANN to predict p_ab
-                print('calculating h_ab for question %d for building a model fron the k_fold' %(qn))
+                print('calculating h_ab for question %s to building a model from the k_fold' %(qn))
                 H_dict = {}
                 for u_id, tu in test_q_data_qn.items():
                     psi_0 = np.dot(q_info[qn]['U'], tu[1]['psi'])
 
                     p_real, d = sub_q_p(raw_df, u_id, 2)
+                    ### todo: check if I need tu[1] or tu[2] here
+                    ### 1 --> h_a, h_b calculated from questions 0 & 1.
+                    ### 2 --> h_a, h_b calculated from question 2 --> doesn't seem right.
                     sub_data_q = get_question_H(psi_0, all_q, p_real,
-                                                [tu['h_q'][str(all_q[0])],
-                                                 tu['h_q'][str(all_q[1])]],
+                                                [tu[1]['h_q'][str(all_q[0])],
+                                                 tu[1]['h_q'][str(all_q[1])]],
                                                 with_mixing, fallacy_type=fal)
-                    tu['h_q'][str(all_q[0]) + str(all_q[1])] = sub_data_q['h_ab']
+                    tu[2]['h_q'] = tu[1]['h_q'].copy()
+                    tu[2]['h_q'][str(all_q[0]) + str(all_q[1])] = sub_data_q['h_ab']
                     H_dict[u_id] = []
                     for hs in h_names:
-                        H_dict[u_id].append(tu['h_q'][hs])
+                        H_dict[u_id].append(tu[2]['h_q'][hs])
 
                 df_H = pd.DataFrame.from_dict(data=H_dict, orient='index')
-                df_H.columns = ['A', 'B', 'C', 'D', 'AB', 'CD', 'pred']
+                df_H.columns = ['A', 'B', 'C', 'D', 'AB', 'CD', 'target']
 
                 start = time.clock()
                 mtd = 'lr'  # 'ANN'
-                print('predicting h_ij on test set using' + mtd + 'method')
+                print('creating model for predicting h_ij on test set using ' + mtd + ' method')
                 est = pred_h_ij(df_H, method = mtd)
                 end = time.clock()
                 print('question %s, h_ij prediction took %.2f s' % (qn, end - start))
@@ -224,7 +229,6 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 ### probs of the current question taken from previous questions
                 temp['p_a_pre'] = temp[q1]
                 temp['p_b_pre'] = temp[q2]
-                temp['p_ab_pre'] = temp[q12]
 
                 ### real probabilities in the third question
                 temp['p_a_real'] = [tu[2]['p_a'][0]]
@@ -232,8 +236,8 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 temp['p_ab_real'] = [tu[2]['p_ab'][0]]
 
                 ### predicted probabilities with U
-                h_a = [tu['h_q'][str(int(temp['q1'][0]))], None, None]
-                h_b = [None, tu['h_q'][str(int(temp['q2'][0]))], None]
+                h_a = [tu[1]['h_q'][str(int(temp['q1'][0]))], None, None]
+                h_b = [None, tu[1]['h_q'][str(int(temp['q2'][0]))], None]
 
                 temp['p_a_pred_U'] = [get_general_p(h_a, all_q, '0', psi_dyn, n_qubits=4).flatten()[0]]
                 temp['p_b_pred_U'] = [get_general_p(h_b, all_q, '1', psi_dyn, n_qubits=4).flatten()[0]]
@@ -253,30 +257,30 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 if with_mixing:
                     all_h = {'one': []}
                     for hs in h_names_gen:
-                        all_h['one'].append(tu['h_q'][hs])
+                        all_h['one'].append(tu[2]['h_q'][hs])
                     df_H = pd.DataFrame.from_dict(data=all_h, orient='index')
                     df_H.columns = ['A', 'B', 'C', 'D', 'AB', 'CD']
                     try:
-                        h_ab = q_info[qn]['H_ols'].predict(df_H).values[0]
+                        h_ab = q_info[qn]['H_ols'][i].predict(df_H).values[0]
                     except:
-                        h_ab = q_info[qn]['H_ols'].predict(df_H)[0]
+                        h_ab = q_info[qn]['H_ols'][i].predict(df_H)[0]
                 else:
                     h_ab = 0.0
 
                 # full_h = [tu['h_q'][str(int(temp['q1'][0]))], tu['h_q'][str(int(temp['q2'][0]))], h_ab]
                 full_h = [None, None, h_ab]
-                temp['p_ab_ols']    = [get_general_p(full_h, all_q, fal, psi_dyn, n_qubits=4).flatten()[0]]
-                temp['p_ab_pred_I'] = [get_general_p(full_h, all_q, fal, psi_0, n_qubits=4).flatten()[0]]
+                temp['p_ab_pred_ols_U']    = [get_general_p(full_h, all_q, fal, psi_dyn, n_qubits=4).flatten()[0]]
+                temp['p_ab_pred_ols_I'] = [get_general_p(full_h, all_q, fal, psi_0, n_qubits=4).flatten()[0]]
 
                 df_prediction = pd.concat([df_prediction, pd.DataFrame(temp)], axis=0)
 
-            print('end of cycle %d' % i)
-            np.save('data/kfold_all_data_dict.npy', all_data)
-            np.save('data/kfold_UbyQ.npy', q_info)
+            np.save('data/predictions/kfold_all_data_dict.npy', all_data)
+            np.save('data/predictions/kfold_UbyQ.npy', q_info)
 
-    np.save('data/test_users.npy', test_users)
+    np.save('data/predictions/test_users.npy', test_users)
     df_h.reset_index(inplace=True)
     df_h.to_csv('data/predictions/df_h.csv')
+    df_H.to_csv('data/predictions/df_H_ols.csv')
     df_prediction.set_index('id', inplace=True)
     df_prediction.to_csv('data/predictions/kfold_prediction.csv')  # index=False)
 
