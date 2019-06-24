@@ -55,12 +55,6 @@ def sub_sample_data(all_data, data_qn, df, users):
         if k in users:
             p_real, d = sub_q_p(df, k, 2)
             data_qn[k] = deepcopy(v)
-            data_qn[k][2] = {
-                'p_a': p_real['A'],
-                'p_b': p_real['B'],
-                'p_ab': p_real['A_B']
-            }
-
     return data_qn
 
 
@@ -81,7 +75,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
         user_same_q_list[q] = g['userID']
 
     ### test_set
-    test_user = {}
+    test_users = {}
 
 
     # third question
@@ -106,10 +100,11 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
         kf = KFold(n_splits=k)
         kf.get_n_splits(user_list_train)
 
-        print('''=================================================================''') # to differentiate between qn
+        print('''
+        =================================================================''') # to differentiate between qn
         for i, (train_index, test_index) in enumerate(kf.split(user_list_train)):
             print('''
-            >>> currently running k_fold analysis on question: %s, k = %d/%d.
+            >>> currently running k_fold analysis to calculate U on question: %s, k = %d/%d.
             ''' % (qn, i, k) )
             q_info[qn] = {}
             train_users, test_users = user_list_train[train_index], user_list_train[test_index]
@@ -134,7 +129,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 p_ab_80.append(tu[2]['p_ab'][0])
             p_a_80 = np.array(p_a_80).mean()
             p_b_80 = np.array(p_b_80).mean()
-            p_ab_80 = np.array(p_b_80).mean()
+            p_ab_80 = np.array(p_ab_80).mean()
 
             if len(train_q_data_qn) > 0:
                 ### question qubits (-1) because if the range inside of some function
@@ -142,17 +137,15 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
 
                 # find U for each question #
                 start = time.clock()
-                print('calculating U for %s on train data' % qn)
+                # time.perf_counter()
+
 
                 ### set bounds to all parameters
                 bounds = np.ones([10, 2])
                 bounds[:, 1] = -1
 
-                # res_temp = general_minimize(fun_to_minimize_grandH, args_=(all_q, train_q_data_qn, h_mix_type, fal),
-                #                             x_0=np.zeros([10]), method='L-BFGS-B', bounds = bounds)
-
                 res_temp = general_minimize(fun_to_minimize_grandH, args_=(all_q, train_q_data_qn, 0, fal),
-                                            x_0=np.zeros([10]), method='Powell')
+                                            x_0=np.zeros([10]), method='Powell') #L-BFGS-B, look at global optimizations at scipy.optimize
 
                 end = time.clock()
                 print('question %s, U optimization took %.2f s' % (qn, end - start))
@@ -167,12 +160,9 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 q_info[qn]['U'] = U_from_H(grandH_from_x(res_temp.x, fal))
 
                 # calculate H_AB model based on MLR/ ANN to predict p_ab
-                print('calculating h_ab')
+                print('calculating h_ab for question %d for building a model fron the k_fold' %(qn))
                 H_dict = {}
                 for u_id, tu in test_q_data_qn.items():
-                    # if use_neutral:
-                    #     psi_0 = uniform_psi(n_qubits=4)
-                    # else:
                     psi_0 = np.dot(q_info[qn]['U'], tu[1]['psi'])
 
                     p_real, d = sub_q_p(raw_df, u_id, 2)
@@ -190,7 +180,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
 
                 start = time.clock()
                 mtd = 'lr'  # 'ANN'
-                print('calculating h_ij' + mtd)
+                print('predicting h_ij on test set using' + mtd + 'method')
                 est = pred_h_ij(df_H, method = mtd)
                 end = time.clock()
                 print('question %s, h_ij prediction took %.2f s' % (qn, end - start))
@@ -255,7 +245,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
                 ### predicted probabilities with mean from fold %
                 temp['p_a_mean80'] = [p_a_80]
                 temp['p_b_mean80'] = [p_b_80]
-                temp['p_ab_mean80'] = [p_b_80]
+                temp['p_ab_mean80'] = [p_ab_80]
 
                 # use question H to generate h_ab
                 h_names_gen = ['0', '1', '2', '3', '01', '23']
@@ -283,6 +273,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
             np.save('data/kfold_all_data_dict.npy', all_data)
             np.save('data/kfold_UbyQ.npy', q_info)
 
+    np.save('data/test_users.npy', test_users)
     df_h.reset_index(inplace=True)
     df_h.to_csv('data/predictions/df_h.csv')
     df_prediction.set_index('id', inplace=True)
@@ -293,11 +284,12 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     || Done calculating {h_i} for every qn/ kfold.                                || 
     || Predictions were saved to: data/predictions/kfold_prediction.csv           || 
     || {h_i} were saved to: data/predictions/df_h.csv                             || 
+    || Dictionary of test users (per qn): saved to data/test_users.npy            || 
     || Supplementary files were saved to: kfold_all_data_dict.npy, kfold_UbyQ.npy || 
     ================================================================================''')
 
 
-# TODO: Explore U: which {h} are siginificantlly different from zero and which qubits are asked in the question.
+# TODO: Explore U: which {h} are significantly different from zero and which qubits are asked in the question.
 # TODO: complete this 3 functions
 def statistical_diff_h(df_h):
     '''

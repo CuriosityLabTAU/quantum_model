@@ -7,7 +7,7 @@ from hamiltonian_prediction import *
 psi_neutral = []
 
 ### take {h} most (ir)rational
-### propogate psi_neutral with this {h}
+### propogate psi_neutral with this {hs}
 ### --> psi_(ir)rational
 
 ### load df_u90 for U

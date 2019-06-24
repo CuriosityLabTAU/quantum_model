@@ -24,7 +24,7 @@ def fun_to_minimize_grandH(x_, all_q, all_data, h_mix_type = 0, fal ='C'):
     for data in all_data.values():
         psi_0 = np.dot(grand_U, data[1]['psi'])
 
-        h_a = data['h_q'][str(all_q[0])]
+        h_a = data[2]['h_q'][str(all_q[0])]
         p_a_calc = get_general_p(full_h=[h_a, None, None],
                                  all_q=all_q,
                                  all_P='0', psi_0=psi_0, n_qubits=4,
@@ -32,7 +32,7 @@ def fun_to_minimize_grandH(x_, all_q, all_data, h_mix_type = 0, fal ='C'):
         p_a = data[2]['p_a']
         err_.append((p_a_calc - p_a) ** 2)
 
-        h_b = data['h_q'][str(all_q[1])]
+        h_b = data[2]['h_q'][str(all_q[1])]
         p_b_calc = get_general_p(full_h=[None, h_b, None],
                                  all_q=all_q,
                                  all_P='1', psi_0=psi_0, n_qubits=4,
