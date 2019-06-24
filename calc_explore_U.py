@@ -87,6 +87,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     ### Run on all users that have the same third question.
     for qn, user_list in user_same_q_list.items():
         # user_list = list(user_list)
+        q_info[qn]['U_params_h'] = {}
         user_list = np.array(user_list)
 
         user_list_train, user_list_test = train_test_split(user_list, test_size=.1, random_state=1)
