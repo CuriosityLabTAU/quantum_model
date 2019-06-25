@@ -90,7 +90,11 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
         user_list = np.array(user_list)
 
         user_list_train, user_list_test = train_test_split(user_list, test_size=.1, random_state=1)
-        test_users[qn] = user_list_test.copy()
+        ### TODO: be careful with this!!!
+        try:
+            test_users[qn] = user_list_test.copy()
+        except:
+            pass
 
         all_q, fal = q_qubits_fal(qn)
         # go over all 4 types of questions
@@ -100,12 +104,9 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
         kf = KFold(n_splits=k)
         kf.get_n_splits(user_list_train)
 
-        print('''
-        =================================================================''') # to differentiate between qn
+        print('=================================================================') # to differentiate between qn
         for i, (train_index, test_index) in enumerate(kf.split(user_list_train)):
-            print('''
-            >>> currently running k_fold analysis to calculate U on question: %s, k = %d/%d.
-            ''' % (qn, i, k) )
+            print('>>> currently running k_fold analysis to calculate U on question: %s, k = %d/%d.' % (qn, i + 1, k))
             q_info[qn] = {}
             q_info[qn]['U_params_h'] = {}
             q_info[qn]['H_ols'] = {}
@@ -280,7 +281,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     np.save('data/predictions/test_users.npy', test_users)
     df_h.reset_index(inplace=True)
     df_h.to_csv('data/predictions/df_h.csv')
-    df_H.to_csv('data/predictions/df_H_ols.csv')
+    # df_H.to_csv('data/predictions/df_H_ols.csv')
     df_prediction.set_index('id', inplace=True)
     df_prediction.to_csv('data/predictions/kfold_prediction.csv')  # index=False)
 
