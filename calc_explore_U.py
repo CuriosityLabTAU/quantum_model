@@ -28,6 +28,13 @@ questions = {'conj': {'Q6': [0, 1],
              'disj':{'Q10': [0, 2],
                      'Q18': [1, 3]},}
 
+### how many paramas we have for each model?
+dof_per_mode = {'mean80': 1,
+                'pre'   : 1,
+                'pred_U': 10,
+                'pred_I': 1,
+}
+
 
 def ttest_or_mannwhitney(y1,y2):
     '''
@@ -332,6 +339,12 @@ def statistical_diff_h(df_h):
             # s = %.2f, p = %.2f, is t_test = %s''' % (s, p, str(is_t)))
             if p < 0.05:
                 temp[h] = [grouped_df.get_group(q)[h].mean()]
+
+        ### which qubits are asked in the question
+        if q in questions['conj'].keys():
+            temp['qubits'] = str(questions['conj'][q])
+        else:
+            temp['qubits'] = str(questions['disj'][q])
         sig_df = sig_df.append(pd.DataFrame(temp))
 
     sig_df.reset_index(inplace=True, drop=True)
@@ -502,13 +515,19 @@ def compare_predictions(prediction_df):
 
     real_prob = df['real']
 
-    for pred in list(pac.str.replace('p_a_','')):
-        ### how many paramas we have for each model
-        p = 1
-        cbic = bic.bic(real_prob, df[pred], p)
-        print(pred, cbic)
+    df_bic = pd.DataFrame()
 
-    print(df.describe)
+    for i, pred in enumerate(list(pac.str.replace('p_a_',''))):
+        if pred == 'real':
+            continue
+        p = dof_per_mode[pred]
+        cbic = bic.bic(real_prob, df[pred], p)
+        df_bic.loc[i,'bic'] = cbic
+        df_bic.loc[i,'model'] = pred
+        df_bic.loc[i,'dof'] = p
+        print('model = %s | dof = %d | bic = %.2f' % (pred, p, cbic))
+
+    df_bic.to_csv('data/predictions/bic.csv', index=0)
 
 def plot_errors(df):
     '''Boxplot of the errors per question type.
@@ -682,11 +701,11 @@ def main():
     with_mixing_l = [True]
     comb = product(h_type, use_U_l, use_neutral_l, with_mixing_l)
 
-    calcU = True
-    # calcU = False
+    # calcU = True
+    calcU = False
 
-    # average_U = True
-    average_U = False
+    average_U = True
+    # average_U = False
 
     ### How many times to repeat the cross validation
     if calcU:
@@ -698,10 +717,10 @@ def main():
 
     if average_U:
         df_h = pd.read_csv('data/predictions/df_h.csv')
-        # statistical_diff_h(df_h)
+        statistical_diff_h(df_h)
 
         sig_h = pd.read_csv('data/predictions/sig_h_per_qn.csv')
-        # predict_u90(sig_h)
+        predict_u90(sig_h)
 
         df_prediction = pd.read_csv('data/predictions/10percent_predictions.csv')  # index=False)
         compare_predictions(df_prediction)
