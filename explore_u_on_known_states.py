@@ -21,6 +21,8 @@ irr_h = df_h[df_h['irr_conj'] == df_h['irr_conj'].min()] # most irrational h
 
 ### todo: how to take the 3 {h} and create U?
 ### take them as full_h = [h_a, h_b, h_ab] -->
+# h_a, h_b, h_ab = rat_h['ha'], rat_h['ha'], rat_h['hab']
+# h_a, h_b, h_ab = irr_h['ha'], irr_h['ha'], irr_h['hab']
 # full_h = [h_a, h_b, h_ab]
 # total_H = compose_H(full_h, all_q, n_qubits=4)
 # psi_final = get_psi(total_H, psi_0)
