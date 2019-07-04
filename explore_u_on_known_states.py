@@ -107,31 +107,23 @@ for r in ['rat','irr']:
     psies[r] = get_psi(total_H, psies['neutral'])
 
 
-
-    # U_rat = None
-    # U_irr = None
-    #
-    # ### propogate psi_neutral with this {hs}
-    # ### --> psi_(ir)rational
-    # psies['rat'] = np.dot(U_rat, psies['neutral'])
-    # psies['irr'] = np.dot(U_irr, psies['neutral'])
-
 ### load df_u90 for U
 sig_h = pd.read_csv('data/predictions/sig_h_per_qn.csv')
 
+### get the operators per question based on significant {h}. And I.
 operators = {}
 for qn in sig_h['qn'].unique():
     operators['U_'+qn] = U_from_H(grandH_from_x(sig_h.loc[sig_h['qn'] == qn, hsc].values.flatten(), questions_fal[qn]))
 
 operators['I'] = np.eye(16)
 
-### apply U_mean_siginificant  and I on the 3 psies.
-### see what happens to the states.
-### from this try infer what is the meaning of U (and life)
-
+### data frame for the results --> probs and rationality per state per operator per rationality.
 probs_df = pd.DataFrame(columns=['operator', 'psi', 'h_type', 'pa', 'pb', 'pab'])
 
+### dictionary for the different psies.
 psies_final = {}
+
+### calculate the probabilites.
 i = 0
 for K, O in operators.items():
     for k, psi in psies.items():
