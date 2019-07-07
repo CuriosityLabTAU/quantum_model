@@ -28,7 +28,7 @@ questions = {'conj': {'Q6': [0, 1],
              'disj':{'Q10': [0, 2],
                      'Q18': [1, 3]},}
 
-### how many paramas we have for each model?
+### todo: how many paramas we have for each model?
 dof_per_mode = {'mean80': 1,
                 'pre'   : 1,
                 'pred_U': 10,
@@ -57,14 +57,6 @@ def ttest_or_mannwhitney(y1,y2):
         s, p = stats.mannwhitneyu(y1, y2)
 
     return s, p, ttest
-
-
-def get_general_p_without_h_trial(all_q, which_prob, psi, n_qubits=4, is_normalized = False):
-    '''calculate probability based on U and psi'''
-    P_ = MultiProjection(which_prob, all_q, n_qubits)
-    psi_final = np.dot(P_, psi)
-    p_ = np.dot(np.conjugate(np.transpose(psi_final)), psi).real / np.dot(np.conjugate(np.transpose(psi_final)), psi_final).real
-    return p_
 
 
 def sub_sample_data(all_data, data_qn, df, users):
@@ -313,8 +305,6 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     ================================================================================''')
 
 
-# TODO: Explore U: which {h} are significantly different from zero and which qubits are asked in the question.
-# TODO: complete this 3 functions
 def statistical_diff_h(df_h):
     '''
     Calculate which {h} per qn are statistically significant from zero.
@@ -349,7 +339,6 @@ def statistical_diff_h(df_h):
 
     sig_df.reset_index(inplace=True, drop=True)
     sig_df.to_csv('data/predictions/sig_h_per_qn.csv', index=0)
-
 
 
 def predict_u90(sig_h):
@@ -458,32 +447,10 @@ def predict_u90(sig_h):
             temp['p_a_mean80'] = [p_a_80]
             temp['p_b_mean80'] = [p_b_80]
 
-            ### predict prob(AB)
-            # temp['p_ab_mean80'] = [p_ab_80]
-
-            # # use question H to generate h_ab
-            # h_names_gen = ['0', '1', '2', '3', '01', '23']
-            # if with_mixing:
-            #     all_h = {'one': []}
-            #     for hs in h_names_gen:
-            #         all_h['one'].append(tu[2]['h_q'][hs])
-            #     df_H = pd.DataFrame.from_dict(data=all_h, orient='index')
-            #     df_H.columns = ['A', 'B', 'C', 'D', 'AB', 'CD']
-            #     try:
-            #         h_ab = q_info[qn]['H_ols'][i].predict(df_H).values[0]
-            #     except:
-            #         h_ab = q_info[qn]['H_ols'][i].predict(df_H)[0]
-            # else:
-            #     h_ab = 0.0
-            #
-            # # full_h = [tu['h_q'][str(int(temp['q1'][0]))], tu['h_q'][str(int(temp['q2'][0]))], h_ab]
-            # full_h = [None, None, h_ab]
-            # temp['p_ab_pred_ols_U'] = [get_general_p(full_h, all_q, fal, psi_dyn, n_qubits=4).flatten()[0]]
-            # temp['p_ab_pred_ols_I'] = [get_general_p(full_h, all_q, fal, psi_0, n_qubits=4).flatten()[0]]
-
             df_prediction = pd.concat([df_prediction, pd.DataFrame(temp)], axis=0)
 
         df_prediction.to_csv('data/predictions/10percent_predictions.csv')  # index=False)
+
 
 def compare_predictions(prediction_df):
     '''
@@ -529,178 +496,8 @@ def compare_predictions(prediction_df):
 
     df_bic.to_csv('data/predictions/bic.csv', index=0)
 
-def plot_errors(df):
-    '''Boxplot of the errors per question type.
-    Also calculate statistical difference between groups.'''
-
-    ### list of the columns of the errors
-    for col in list(df.columns):
-        try:
-            df[col] = df[col].str.replace('[', '').str.replace(']', '').astype('float')
-        except:
-            pass
-
-    err_cl = list(df.columns[df.columns.str.contains('err')])
-
-    ### errors descriptive data frame
-    a = df[df.columns[df.columns.str.contains('p_a')]]
-    a = a[a.columns[~a.columns.str.contains('p_ab')]]
-
-    b = df[df.columns[df.columns.str.contains('p_b')]]
-
-    b.columns = a.columns
-
-    a = a.append(b)
-    a = a[a.columns[a.columns.str.contains('err')]]
-
-    a.reset_index(inplace=True, drop=True)
-
-    aa = np.sqrt(a.mean())
-    print(aa.sort_values())
-
-    ### take only the columns of the mean sqrt squared error
-    a = a[a.columns[~a.columns.str.contains('abs')]]
-    a.columns = a.columns.str.replace('p_a_err_real_','')
-    a = pd.melt(a, value_vars=list(a.columns),
-                       var_name='err_typ', value_name='err_val')
-    a.reset_index(inplace=True, drop=True)
-    a.to_csv('data/calc_U/00pred_errs.csv')
-
-    ### calculate diff between groups.
-    errs = list(a['err_typ'].unique())
-    stats_df = pd.DataFrame()
-    for g1, g2 in combinations(errs,2):
-        y1 = a[a['err_typ'] == g1]['err_val']
-        y2 = a[a['err_typ'] == g2]['err_val']
-        s, p, ttest = ttest_or_mannwhitney(y1, y2)
-
-        d = pd.DataFrame(data = [[g1, g2, ttest, s, p, y1.mean(), y2.mean(), y1.median(), y2.median(), y1.std(), y2.std()]],
-                         columns = ['g1', 'g2', 'is_test', 's', 'p_val', 'y1_mean', 'y2_mean', 'y1_median', 'y2_median', 'y1_std', 'y2_std'])
-        stats_df = stats_df.append(d)
-    stats_df.reset_index(inplace=True, drop=True)
-    stats_df.to_csv('data/calc_U/00errs_diff_stats.csv')
-
-    ### take only the columns with the errors and question number
-    df1 = df[err_cl + ['qn']]
-
-    ### melt the data frame to: qn, err_type, err_value
-    df2 = pd.melt(df1, id_vars=['qn'], value_vars=err_cl, var_name='err_type', value_name='err_value')
-
-    ### boxplot of err to qn by err_type
-    g = sns.factorplot(x="qn", hue='err_type', y="err_value", data=df2, kind="box", size=4, aspect=2)
-    g.fig.suptitle('prediction error as function of which question was third\n by probability by prediction type (U, I, previous)')
-    g.savefig('data/calc_U/err_boxplot_per_qn_per_prob.png')
-
-    g1 = sns.factorplot(x="err_type", y="err_value", data=df2, kind="box", size=4, aspect=2)
-    g1.set_xticklabels(rotation=45)
-    g1.savefig('data/calc_U/err_boxplot_across_all_questions.png')
-
-    df3 = df2.copy()
-    df3['prob'] = 0
-    df3['prob'][df3['err_type'].str.contains('p_b')] = 1 # p_a --> 0
-    df3['err_type'][df3['err_type'].str.contains('_I')]      = 'I'
-    df3['err_type'][df3['err_type'].str.contains('_')]      = ''
-    df3['err_type'][df3['err_type'].str.contains('_pre')]    = 'pre'
-    df3['err_type'][df3['err_type'].str.contains('mean')]    = 'mean80'
-    df3['err_type'][df3['err_type'].str.contains('uniform')] = 'uniform'
-    df3['err'] = pd.Categorical(df3['err_type'], categories=df3['err_type'].unique()).codes
-    df3.to_csv('data/calc_U/00pred_err_per_prediction_type.csv')#index=False)
-
-    ### group per probability a/b.
-    gg = df3.groupby(['prob'])
-    ### group per probability a/b per question.
-    gg1 = df3.groupby(['prob','qn'])
-
-    # ### run on all combinations of prob and q.
-    # for p, q in product((0,1),('Q10','Q12','Q16','Q18')):
-    #     gg.get_group(p).to_csv('data/calc_U/00pred_err_per_prob_%d.csv' % p)
-    #     gg1.get_group((p, q)).to_csv('data/calc_U/00pred_err_per_prob_%d_per_qn_%d.csv' %(p,q))
-
-    ### boxplot of err by err_type
-    g2 = sns.factorplot(x="err_type", y="err_value", data=df3, kind="box", size=4, aspect=2)
-    g2.set_xticklabels(rotation=45)
-    g2.savefig('data/calc_U/err_boxplot_across_all_questions_and_probs.png')
-
-    df4 = df3.pivot(columns='err_type', values='err_value')
-    df5 = pd.DataFrame()
-    df5[''] = df4[''].dropna().reset_index(drop=True)
-    df5['I'] = df4['I'].dropna().reset_index(drop=True)
-    df5['pre'] = df4['pre'].dropna().reset_index(drop=True)
-
-    df5.to_csv('data/calc_U/00cross_val_prediction_errors_per_prediction_type4anova.csv')#index=False)('data/calc_U/cross_val_prediction_errors_per_prediction_type.csv')#index=False)
-
-
-def average_results(h_mix_type, use_U, use_neutral, with_mixing, num_of_repeats):
-    '''Combine all the data from num_of_repeats cross validations to one dataframe'''
-    control_str = '_U_%s_mixing_%s_neutral_%s_mix_type_%d' % (use_U, with_mixing, use_neutral, h_mix_type)
-    df_mean = pd.DataFrame()
-
-    ### adding one dataframe at a time.
-    for i in range(num_of_repeats):
-        prediction_errors = pd.read_csv('data/calc_U/cross_val_prediction_errors_%s_%d.csv' % (control_str, i))
-        df_mean = pd.concat((df_mean,prediction_errors), axis = 0)
-
-    df_mean.to_csv('data/calc_U/00cross_val_prediction_errors_sum.csv')#index=False)
-
-    for i, g in df_mean.groupby('qn'):
-        g.to_csv('data/calc_U/00cross_val_prediction_errors_qn_%d.csv' % (i))#index=False)
-
-    return df_mean
-
-
-def h_u():
-    '''looking at the different h's for different questions from the kfold'''
-    control_str = '_U_%s_mixing_%s_neutral_%s_mix_type_%d' % (True, True, False, 0)
-    df_hs_u = pd.DataFrame()
-    for qn in (2,3,4,5):
-        for i in range(10):
-            fname2read = 'data/calc_U/q_info%s_q_%d_%d.pkl' % (control_str, qn, i)
-            q_info = pickle.load(open(fname2read, 'rb'))
-            if len(q_info[qn]) > 3:
-                ### saving to dataframe all the params
-                temp = np.concatenate(
-                    (np.array([qn]), q_info[qn]['fal'], np.array([i]),
-                     q_info[qn]['q1'], q_info[qn]['q2'],
-                     q_info[qn]['U_params_h'][0]),
-                    axis=0).reshape(1,15)
-                temp = pd.DataFrame(data= temp, columns = ['qn','fal','run','q1','q2'] + ['h_a', 'h_b', 'h_c', 'h_d', 'h_ab', 'h_ac', 'h_ad', 'h_bc', 'h_bd', 'h_cd'])
-                df_hs_u = pd.concat((df_hs_u, temp),axis = 0)
-    df_hs_u.reset_index(inplace=True,drop=True)
-    df_hs_u1 = pd.melt(df_hs_u, id_vars=['qn', 'fal', 'run', 'q1', 'q2'],
-                       value_vars=['h_a', 'h_b', 'h_c', 'h_d', 'h_ab', 'h_ac', 'h_ad', 'h_bc', 'h_bd', 'h_cd'],
-                       var_name='h', value_name='h_value')
-    df_hs_u.to_csv('data/calc_U/df_hs_u.csv')
-    df_hs_u1.to_csv('data/calc_U/df_hs_u_melted.csv')
-
-    ### remove outliers.
-    df_hs_u1 = df_hs_u1[df_hs_u1['h_value'] > - 5]
-    return df_hs_u, df_hs_u1
-
-
-def my_plot(x, y, **kwargs):
-    '''Plot regression plot + equation + significance'''
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-    plt.plot(x, slope * x + intercept)
-    p = ''
-    if p_value < 0.05:
-        p = '*'
-    if p_value < 0.01:
-        p = '**'
-    if p_value < 0.001:
-        p = '***'
-    f = '%.2f x + %.2f' % (slope, intercept) + '{}'.format(p)
-    props = dict(boxstyle='round', facecolor='gainsboro', alpha=.7)
-    plt.text(0.0, 0.0, f, size=9, bbox=props)
-    plt.scatter(x, y, s = .5,alpha = .5, **kwargs)
-
 
 def main():
-    h_type = [0]
-    use_U_l = [True]
-    use_neutral_l = [False]
-    with_mixing_l = [True]
-    comb = product(h_type, use_U_l, use_neutral_l, with_mixing_l)
-
     # calcU = True
     calcU = False
 
@@ -709,10 +506,7 @@ def main():
 
     ### How many times to repeat the cross validation
     if calcU:
-
-        for h_mix_type, use_U, use_neutral, with_mixing in comb:
-            # print('Running:\tUse_U = {} |\tUse_Neutral = {} |\tWith_Mixing = {} |\th_mix_type = {}'.format(use_U,use_neutral,with_mixing, h_mix_type))
-            calculate_all_data_cross_val_kfold(with_mixing=with_mixing)
+        calculate_all_data_cross_val_kfold()
 
 
     if average_U:
@@ -725,34 +519,6 @@ def main():
         df_prediction = pd.read_csv('data/predictions/10percent_predictions.csv')  # index=False)
         compare_predictions(df_prediction)
 
-    # else:
-    #     i = 0
-    #     for h_mix_type, use_U, use_neutral, with_mixing in comb:
-    #         # prediction_errors = pd.read_csv('data/calc_U_unbounded/kfold_prediction_errors.csv')
-    #         prediction_errors = pd.read_csv('data/calc_U/kfold_prediction_errors.csv')
-    #
-    #         plot_errors(prediction_errors)
-    #
-    #         # ### plot real probs vs. predicted probs
-    #         # for p in ['a', 'b']: #, 'ab'
-    #         #     df = prediction_errors[prediction_errors.columns[prediction_errors.columns.str.contains('p_%s_'%p)]]
-    #         #     g = sns.PairGrid(df)
-    #         #     g.map(my_plot)
-    #         #
-    #         # ### look at the behavior of the parameters of U.
-    #         # df_hs_u, df_hs_u_melted = h_u()
-    #         #
-    #         # ### plot {h} params of U per question for 10 kfolds
-    #         # qns = df_hs_u_melted['qn'].unique()
-    #         # s1 = ''
-    #         # for i in qns:
-    #         #     s = df_hs_u_melted[df_hs_u_melted['qn'] == i][['qn', 'fal', 'q1', 'q2']][-1:].values.flatten()
-    #         #     s1 = s1 + 'qn = %d, fal = %d, q1,q2 = %d, %d \n' % (s[0], s[1], s[2], s[3])
-    #         # print(s1)
-    #         # g = sns.factorplot(x="qn", hue='h', y="h_value", data=df_hs_u_melted, kind="box", size=4, aspect=2)
-    #         # g = sns.factorplot(x="h", hue='qn', y="h_value", data=df_hs_u_melted, kind="box", size=4, aspect=2)
-    #
-    #         plt.show()
 
 if __name__ == '__main__':
     main()
