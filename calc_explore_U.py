@@ -15,6 +15,12 @@ from itertools import combinations
 
 from RegscorePy import bic # https://pypi.org/project/RegscorePy/
 
+# save np.load
+np_load_old = np.load
+
+# modify the default parameters of np.load
+np.load = lambda *a, **k: np_load_old(*a, allow_pickle=True, **k)
+
 # psi_dyn = np.dot(U, psi_0)
 
 qubits_dict = {0:'a', 1:'b', 2:'c', 3:'d'}
