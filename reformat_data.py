@@ -112,19 +112,6 @@ def reformat_data_from_qualtrics(path):
     raw_df = raw_df[cnames]
     clms = raw_df.columns
 
-    # ### change options numbering
-    # for q in fallacy_qs:
-    #     cc = clms[clms.str.contains(q)]
-    #     cc = cc[~cc.str.contains('order')]
-    #
-    #     a = cc.str.split('_', expand=True) ### current numbering
-    #     list(a.levels[1]).sort()
-    #     d = {}
-    #     for i, j in enumerate(a.levels[1]):
-    #         d[q+'_'+j] = q + '_' + str(i) ### new order
-    #
-    #     raw_df.rename(columns=(d), inplace=True)
-
     ### match option with which qubit and probability it is
     q_dict = {}
     # probs = ['pa','pb','pab']
