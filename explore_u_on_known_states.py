@@ -58,6 +58,9 @@ def main():
     ### Also load the file that creates this data frame.
     df_h = pd.read_csv('data/simulated_data/p_from_h.csv')
 
+    df_h['big_irr_conj'] = df_h.apply(lambda x: x['pab_c'] - x[['pa','pb']].max(), axis = 1)
+
+
     ### create neutral psi
     psies['neutral'] = uniform_psi(4, 'uniform')
 
@@ -67,7 +70,7 @@ def main():
     ### take {hs} most (ir)rational
     for r in ['rat','irr']:
         if r == 'irr':
-            df_h_r = df_h[df_h['irr_conj'] == df_h['irr_conj'].max()] # most irrational h
+            df_h_r = df_h[df_h['big_irr_conj'] == df_h['big_irr_conj'].max()] # most irrational h
         elif r == 'rat':
             df_h_r = df_h[df_h['irr_conj'] == df_h['irr_conj'].min()] # most rational h
 
