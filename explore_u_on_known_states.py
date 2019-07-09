@@ -74,8 +74,6 @@ def main():
         elif r == 'rat':
             df_h_r = df_h[df_h['irr_conj'] == df_h['irr_conj'].min()] # most rational h
 
-        ### todo: how to take the 3 {h} and create U?
-        ### todo: (determined ONLY by h_ab --> how to choose h_a, h_b?)
         ### sample one line from the most (ir)rational {h}
         h_a, h_b, h_ab = df_h_r.sample(1)[['ha','hb','hab']].values.flatten()
 
@@ -129,7 +127,7 @@ def main():
     probs_df[['pa', 'pb', 'pab','irr_conj']] = probs_df[['pa', 'pb', 'pab','irr_conj']].astype(float).round(2)
 
     ### save psies and predicted probabilities for different states
-    np.save('data/simulated_data/propgated_psies.npy', psies)
+    np.save('data/simulated_data/propogated_psies.npy', psies)
     probs_df.to_csv('data/simulated_data/probs_vs_u_i_psies.csv', index=False)
 
     ### to load again:

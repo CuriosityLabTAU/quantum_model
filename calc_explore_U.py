@@ -82,7 +82,7 @@ def calculate_all_data_cross_val_kfold(with_mixing=True):
     raw_df.rename({'survey_code':'userID'},axis = 1, inplace=True)
     raw_df.reset_index(drop=True, inplace=True)
 
-    ### loading all the dat of the firs 3 questions
+    ### loading all the dat of the first 3 questions
     all_data = np.load('data/processed_data/all_data_dict.npy').item()
 
     ### creating a dictionary with users that had the same question as the third question
@@ -375,8 +375,8 @@ def predict_u90(sig_h):
     test_q_data_qn = {}
     train_q_data_qn = {}
 
-    test_q_data_qn = sub_sample_data(all_data, test_q_data_qn, raw_df, test_users)
-    train_q_data_qn = sub_sample_data(all_data, train_q_data_qn, raw_df, train_users)
+    # test_q_data_qn = sub_sample_data(all_data, test_q_data_qn, raw_df, test_users)
+    # train_q_data_qn = sub_sample_data(all_data, train_q_data_qn, raw_df, train_users)
 
     sig_h.set_index('qn', inplace=True)
 
@@ -500,7 +500,7 @@ def compare_predictions(prediction_df):
         df_bic.loc[i,'dof'] = p
         print('model = %s | dof = %d | bic = %.2f' % (pred, p, cbic))
 
-    df_bic.to_csv('data/predictions/bic.csv', index=0)
+    df_bic.to_csv('data/predictions/model_comparison.csv', index=0)
 
 
 def main():
